@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Simpool</title>
+    <style>
+        .like-btn {
+            border-radius: 10px;
+            background: #b1dcfb;
+            border: none;
+            line-height: 24px;
+        }
+        .custom-button {
+            background: black;
+            color: white;
+            border-radius: 10px;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+          table {
+            width: 100%;
+            border-top: 1px solid #444444;
+            border-collapse: collapse;
+          }
+          th, td {
+            border-bottom: 1px solid #444444;
+            border-left: 1px solid #444444;
+            padding: 10px;
+          }
+          th:first-child, td:first-child {
+            border-left: none;
+          }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+       <h1>Mission</h1>
+        <h1>우리의 심심함을 해결한다.</h1>
+        <form action="/simpool" method="post">
+            <textarea name='content' rows="4" cols="60"></textarea>
+            <input name="like" value="0" type="hidden">
+            <input class='custom-button' type="submit" value="등록">
+        </form>
+    </div>
+
+    <table>
+        <tr style="background-color: antiquewhite;">
+            <th>심심함을 해결할 솔루션</th>
+            <th>좋아요</th>
+        </tr>
+        {% for s in simpools %}
+        <tr>
+            <td> {{ s.content }}</td>
+            <td> {{ s.like }}
+            <form action="/simpool/like" method="post" style="display: contents;">
+                <input type="hidden" name="id" value="{{ s._id }}">
+                <input type="submit" class="like-btn" value="좋아요">
+            </form>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+</body>
+</html>
