@@ -1,17 +1,14 @@
-from fastapi import FastAPI, Body, HTTPException, status, Request, Form
+from fastapi import FastAPI, Body, HTTPException, status, Request, Form, Cookie, Response
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, EmailStr
 from bson import ObjectId
-from typing import Optional, List
+from typing import Optional, List, Union
 import motor.motor_asyncio
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
@@ -54,15 +51,44 @@ class SimpoolModel(BaseModel):
 
 
 @app.post("/simpool/like", response_description="Add new simpool", response_model=SimpoolModel)
-async def create_student(request: Request, id: str = Form()):
-    condition = {'_id': id}
-    await db["simpool"].update_one(condition, {"$inc": {"like": 1}})
-    return RedirectResponse(url="/", status_code=302)
+async def simpool_like(response: Response, like_cookies: Union[str, None] = Cookie(default=None), id: PyObjectId = Form()):
+    str_id = str(id)
+
+    #cookie 검사
+    is_like = False
+    if like_cookies is not None:
+        like_cookie_list = like_cookies.split(",")
+        for l in like_cookie_list:
+            if l == str_id:
+                is_like = True
+                break
+
+    # 좋아요 한적이 있냐?
+    if is_like:
+        pass
+    # 좋아요 한적이 없다.
+    else:
+        condition = {'_id': id}
+        await db["simpool"].update_one(condition, {"$inc": {"like": 1}})
+
+    if like_cookies is None:
+        set_cookie = str_id
+    else:
+        set_cookie = str_id + ',' + like_cookies
+
+    response = RedirectResponse(url="/", status_code=302)
+    response.set_cookie(key='like_cookies', value=set_cookie)
+    return response
 
 
 @app.post("/simpool", response_description="Add new simpool", response_model=SimpoolModel)
 async def create_student(request: Request, content: str = Form(), like: int = Form()):
-    simpool = {'content': content, 'like': like}
+    user_ip = request.client.host
+    ip = await db['black_list_ip'].find_one({"ip": user_ip})
+    if ip:
+        return RedirectResponse(url="https://naver.com", status_code=302)
+
+    simpool = {'content': content, 'like': like, 'host_id': user_ip}
     await db["simpool"].insert_one(simpool)
 
     return RedirectResponse(url="/", status_code=302)
